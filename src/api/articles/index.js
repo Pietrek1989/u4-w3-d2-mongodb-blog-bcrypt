@@ -28,28 +28,47 @@ articlesRouter.post(
 
 articlesRouter.get("/", async (req, res, next) => {
   try {
-    // if (req.query && req.query.category) {
-    //   const articles = await ArticlesModel.find({
-    //     category: req.query.category,
-    //   });
-    //   res.send(articles);
     const mongoQuery = q2m(req.query);
-    const articles = await ArticlesModel.find(
-      mongoQuery.criteria,
-      mongoQuery.options.fields
-    )
+    if (req.query && req.query.category) {
+      const articles = await ArticlesModel.find(
+        mongoQuery.criteria,
+        mongoQuery.options.fields,
+        {
+          category: req.query.category,
+        }
+      )
+        .limit(mongoQuery.options.limit)
+        .skip(mongoQuery.options.skip)
+        .sort(mongoQuery.options.sort);
+      const total = await ArticlesModel.countDocuments(mongoQuery.criteria);
 
-      .limit(mongoQuery.options.limit)
-      .skip(mongoQuery.options.skip)
-      .sort(mongoQuery.options.sort);
-    const total = await ArticlesModel.countDocuments(mongoQuery.criteria);
-    // no matter the order of usage of these methods, Mongo will ALWAYS apply SORT then SKIP then LIMIT
-    res.send({
-      links: mongoQuery.links("http://localhost:3001/articles", total),
-      total,
-      numberOfPages: Math.ceil(total / mongoQuery.options.limit),
-      articles,
-    });
+      res.send({
+        links: mongoQuery.links("http://localhost:3001/articles", total),
+        total,
+        numberOfPages: Math.ceil(total / mongoQuery.options.limit),
+        articles,
+      });
+    } else if (req.query) {
+      const articles = await ArticlesModel.find(
+        mongoQuery.criteria,
+        mongoQuery.options.fields
+      )
+
+        .limit(mongoQuery.options.limit)
+        .skip(mongoQuery.options.skip)
+        .sort(mongoQuery.options.sort);
+      const total = await ArticlesModel.countDocuments(mongoQuery.criteria);
+
+      res.send({
+        links: mongoQuery.links("http://localhost:3001/articles", total),
+        total,
+        numberOfPages: Math.ceil(total / mongoQuery.options.limit),
+        articles,
+      });
+    } else {
+      const articles = await ArticlesModel.find();
+      res.send(articles);
+    }
   } catch (error) {
     next(error);
   }
@@ -72,6 +91,7 @@ articlesRouter.get("/:articleId", async (req, res, next) => {
     next(error);
   }
 });
+
 articlesRouter.put("/:articleId", async (req, res, next) => {
   try {
     const updatedArticle = await ArticlesModel.findByIdAndUpdate(
@@ -226,6 +246,7 @@ articlesRouter.put(
     }
   }
 );
+
 articlesRouter.delete(
   "/:articleId/comments/:commentsId",
   async (req, res, next) => {
@@ -241,7 +262,7 @@ articlesRouter.delete(
       } else {
         createHttpError(
           404,
-          `Article with id ${req.params.commentsId} not found!`
+          `Article with id ${req.params.articleId} not found!`
         );
       }
     } catch (error) {
