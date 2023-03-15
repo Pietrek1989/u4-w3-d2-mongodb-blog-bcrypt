@@ -5,6 +5,7 @@ import { checkArticlesSchema, triggerBadRequest } from "./validation.js";
 import { getArticles, writeArticles } from "../../lib/fs-tools.js";
 import { sendsPostNoticationEmail } from "../../lib/email-tools.js";
 import ArticlesModel from "./model.js";
+import q2m from "query-to-mongo";
 
 const articlesRouter = Express.Router();
 
@@ -27,15 +28,28 @@ articlesRouter.post(
 
 articlesRouter.get("/", async (req, res, next) => {
   try {
-    if (req.query && req.query.category) {
-      const articles = await ArticlesModel.find({
-        category: req.query.category,
-      });
-      res.send(articles);
-    } else {
-      const articles = await ArticlesModel.find();
-      res.send(articles);
-    }
+    // if (req.query && req.query.category) {
+    //   const articles = await ArticlesModel.find({
+    //     category: req.query.category,
+    //   });
+    //   res.send(articles);
+    const mongoQuery = q2m(req.query);
+    const articles = await ArticlesModel.find(
+      mongoQuery.criteria,
+      mongoQuery.options.fields
+    )
+
+      .limit(mongoQuery.options.limit)
+      .skip(mongoQuery.options.skip)
+      .sort(mongoQuery.options.sort);
+    const total = await ArticlesModel.countDocuments(mongoQuery.criteria);
+    // no matter the order of usage of these methods, Mongo will ALWAYS apply SORT then SKIP then LIMIT
+    res.send({
+      links: mongoQuery.links("http://localhost:3001/articles", total),
+      total,
+      numberOfPages: Math.ceil(total / mongoQuery.options.limit),
+      articles,
+    });
   } catch (error) {
     next(error);
   }
@@ -217,9 +231,9 @@ articlesRouter.delete(
   async (req, res, next) => {
     try {
       const updatedArticle = await ArticlesModel.findByIdAndUpdate(
-        req.params.articleId, // WHO
-        { $pull: { comments: { _id: req.params.commentsId } } }, // HOW
-        { new: true, runValidators: true } // OPTIONS
+        req.params.articleId,
+        { $pull: { comments: { _id: req.params.commentsId } } },
+        { new: true, runValidators: true }
       );
 
       if (updatedArticle) {
