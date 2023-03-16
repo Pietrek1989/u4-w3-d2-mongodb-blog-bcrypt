@@ -42,27 +42,27 @@ const articlesSchema = {
       },
     },
   },
-  author: {
-    in: ["body"],
-    isObject: {
-      errorMessage:
-        "Cover is a mandatory field and needs to be a link in string format!",
-      name: {
-        in: ["body"],
-        isString: {
-          errorMessage:
-            "author name is a mandatory field and needs to be a link in string format!",
-        },
-      },
-      avatar: {
-        in: ["body"],
-        isString: {
-          errorMessage:
-            "avatar is a mandatory field and needs to be a link in string format!",
-        },
-      },
-    },
-  },
+  // author: {
+  //   in: ["body"],
+  //   isObject: {
+  //     errorMessage:
+  //       "Cover is a mandatory field and needs to be a link in string format!",
+  //     name: {
+  //       in: ["body"],
+  //       isString: {
+  //         errorMessage:
+  //           "author name is a mandatory field and needs to be a link in string format!",
+  //       },
+  //     },
+  //     avatar: {
+  //       in: ["body"],
+  //       isString: {
+  //         errorMessage:
+  //           "avatar is a mandatory field and needs to be a link in string format!",
+  //       },
+  //     },
+  //   },
+  // },
   content: {
     in: ["body"],
     isString: {

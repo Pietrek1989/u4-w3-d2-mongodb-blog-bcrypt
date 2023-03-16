@@ -6,16 +6,13 @@ const articleSchema = new Schema(
   {
     category: { type: String, required: true },
     title: { type: String, required: true },
-    cover: { type: String, required: true },
+    cover: { type: String },
     readTime: {
       value: { type: Number },
       unit: { type: String, enum: ["minutes", "seconds", "hours"] },
     },
-    author: {
-      name: { type: String },
-      avatar: { type: String },
-    },
-    content: { type: String, required: true },
+    author: { type: Schema.Types.ObjectId, ref: "Author" },
+    content: { type: String },
     comments: [
       {
         title: String,
@@ -24,6 +21,7 @@ const articleSchema = new Schema(
         dateOfUpdate: Date,
       },
     ],
+    likes: [{ authorId: { type: mongoose.Types.ObjectId, ref: "Author" } }],
   },
   {
     timestamps: true,

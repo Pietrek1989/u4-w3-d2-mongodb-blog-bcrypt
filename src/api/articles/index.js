@@ -76,7 +76,9 @@ articlesRouter.get("/", async (req, res, next) => {
 
 articlesRouter.get("/:articleId", async (req, res, next) => {
   try {
-    const article = await ArticlesModel.findById(req.params.articleId);
+    const article = await ArticlesModel.findById(req.params.articleId)
+      .populate({ path: "author", select: "name avatar" })
+      .populate({ path: "likes.authorId", select: "name avatar" });
     if (article) {
       res.send(article);
     } else {
@@ -270,4 +272,43 @@ articlesRouter.delete(
     }
   }
 );
+
+articlesRouter.post("/:articleId/likes", async (req, res, next) => {
+  try {
+    const likeToUpdate = await ArticlesModel.findById(req.params.articleId);
+    if (
+      likeToUpdate.likes.some(
+        (like) => like.authorId.toString() === req.body.likes
+      )
+    ) {
+      next(
+        createHttpError(
+          404,
+          `Article with id ${req.params.articleId} already has a like from id:${req.body.likes}!`
+        )
+      );
+    } else {
+      const updatedArticle = await ArticlesModel.findByIdAndUpdate(
+        req.params.articleId,
+        // WHO
+        { $push: { likes: { authorId: req.body.likes } } },
+        // HOW
+        { new: true, runValidators: true }
+      ); // OPTIONS
+
+      if (updatedArticle) {
+        res.status(201).send(updatedArticle);
+      } else {
+        next(
+          createHttpError(
+            404,
+            `Article with id ${req.params.articleId} not found!`
+          )
+        );
+      }
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
 export default articlesRouter;
