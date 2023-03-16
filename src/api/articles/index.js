@@ -276,17 +276,32 @@ articlesRouter.delete(
 articlesRouter.post("/:articleId/likes", async (req, res, next) => {
   try {
     const likeToUpdate = await ArticlesModel.findById(req.params.articleId);
+    if (!likeToUpdate) {
+      return next(
+        createHttpError(
+          404,
+          `Article with id ${req.params.articleId} not found!`
+        )
+      );
+    }
+
     if (
       likeToUpdate.likes.some(
         (like) => like.authorId.toString() === req.body.likes
       )
     ) {
-      next(
-        createHttpError(
-          404,
-          `Article with id ${req.params.articleId} already has a like from id:${req.body.likes}!`
-        )
-      );
+      const updatedArticle = await ArticlesModel.findByIdAndUpdate(
+        req.params.articleId,
+        // WHO
+        { $pull: { likes: { authorId: req.body.likes } } },
+        // HOW
+        { new: true, runValidators: true }
+      ); // OPTIONS
+      if (updatedArticle) {
+        res
+          .status(201)
+          .send({ updatedArticle, likes: updatedArticle.likes.length });
+      }
     } else {
       const updatedArticle = await ArticlesModel.findByIdAndUpdate(
         req.params.articleId,
@@ -297,14 +312,9 @@ articlesRouter.post("/:articleId/likes", async (req, res, next) => {
       ); // OPTIONS
 
       if (updatedArticle) {
-        res.status(201).send(updatedArticle);
-      } else {
-        next(
-          createHttpError(
-            404,
-            `Article with id ${req.params.articleId} not found!`
-          )
-        );
+        res
+          .status(201)
+          .send({ updatedArticle, likes: updatedArticle.likes.length });
       }
     }
   } catch (error) {

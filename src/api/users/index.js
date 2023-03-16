@@ -1,8 +1,6 @@
-import Express from "express";
-import uniqid from "uniqid";
-
-import { getAuthors, writeAuthors } from "../../lib/fs-tools.js";
-import createHttpError from "http-errors";
+// import uniqid from "uniqid";
+// import { getAuthors, writeAuthors } from "../../lib/fs-tools.js";
+// import createHttpError from "http-errors";
 import express from "express";
 import createError from "http-errors";
 import AuthorsModel from "./model.js";
@@ -64,7 +62,7 @@ authorsRouter.put("/:authorId", async (req, res, next) => {
 
 authorsRouter.delete("/:authorId", async (req, res, next) => {
   try {
-    const deletedAuthor = await AuthorsModel.findByIdAndUpdate(
+    const deletedAuthor = await AuthorsModel.findByIdAndDelete(
       req.params.authorId
     );
     if (deletedAuthor) {
