@@ -14,13 +14,13 @@ const articlesSchema = {
       errorMessage: "Category is a mandatory field and needs to be a string!",
     },
   },
-  cover: {
-    in: ["body"],
-    isString: {
-      errorMessage:
-        "Cover is a mandatory field and needs to be a link in string format!",
-    },
-  },
+  // cover: {
+  //   in: ["body"],
+  //   isString: {
+  //     errorMessage:
+  //       "Cover is a mandatory field and needs to be a link in string format!",
+  //   },
+  // },
   readTime: {
     in: ["body"],
     isObject: {
