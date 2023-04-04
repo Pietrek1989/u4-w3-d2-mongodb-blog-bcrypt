@@ -4,6 +4,8 @@
 import express from "express";
 import createError from "http-errors";
 import AuthorsModel from "./model.js";
+import { basicAuthMiddleware } from "../../lib/auth/basic.js";
+import ArticlesModel from "../articles/model.js";
 
 const authorsRouter = express.Router();
 
@@ -41,7 +43,7 @@ authorsRouter.get("/:authorId", async (req, res, next) => {
   }
 });
 
-authorsRouter.put("/:authorId", async (req, res, next) => {
+authorsRouter.put("/:authorId", basicAuthMiddleware, async (req, res, next) => {
   try {
     const updatedAuthor = await AuthorsModel.findByIdAndUpdate(
       req.params.authorId,
@@ -76,5 +78,28 @@ authorsRouter.delete("/:authorId", async (req, res, next) => {
     next(error);
   }
 });
+
+authorsRouter.get("/me/info", basicAuthMiddleware, async (req, res, next) => {
+  try {
+    res.send(req.author);
+  } catch (error) {
+    next(error);
+  }
+});
+authorsRouter.get(
+  "/me/stories",
+  basicAuthMiddleware,
+  async (req, res, next) => {
+    try {
+      const articles = await ArticlesModel.find({}).populate("author");
+      const articlesByAuthor = articles.filter((article) => {
+        return article.author && article.author.name === req.author.name;
+      });
+      res.send(articlesByAuthor);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default authorsRouter;

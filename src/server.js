@@ -8,6 +8,7 @@ import {
   badRequestHandler,
   unauthorizedHandler,
   notfoundHandler,
+  forbiddenErrorHandler,
 } from "./errorsHandlers.js";
 import cors from "cors";
 import { join } from "path";
@@ -44,6 +45,7 @@ server.use(badRequestHandler);
 server.use(unauthorizedHandler);
 server.use(notfoundHandler);
 server.use(genericErrorHandler);
+server.use(forbiddenErrorHandler);
 mongoose.connect(process.env.MONGO_URL);
 mongoose.connection.on("connected", () => {
   console.log("✅ Successfully connected to Mongo!");

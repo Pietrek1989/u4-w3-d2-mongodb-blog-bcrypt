@@ -6,6 +6,8 @@ import { getArticles, writeArticles } from "../../lib/fs-tools.js";
 import { sendsPostNoticationEmail } from "../../lib/email-tools.js";
 import ArticlesModel from "./model.js";
 import q2m from "query-to-mongo";
+import atob from "atob";
+import { basicAuthMiddleware } from "../../lib/auth/basic.js";
 
 const articlesRouter = Express.Router();
 
@@ -48,16 +50,53 @@ articlesRouter.get("/", async (req, res, next) => {
         numberOfPages: Math.ceil(total / mongoQuery.options.limit),
         articles,
       });
+    }
+    if (req.query && req.query.price) {
+      const articles = await ArticlesModel.find(
+        mongoQuery.criteria,
+        mongoQuery.options.fields,
+        {
+          price: req.query.price,
+        }
+      )
+        .populate({
+          path: "author",
+          select: "name",
+        })
+        .limit(mongoQuery.options.limit)
+        .skip(mongoQuery.options.skip)
+        .sort(mongoQuery.options.sort);
+      const total = await ArticlesModel.countDocuments(
+        mongoQuery.criteria
+      ).populate({
+        path: "author",
+        select: "name",
+      });
+
+      res.send({
+        links: mongoQuery.links("http://localhost:3001/articles", total),
+        total,
+        numberOfPages: Math.ceil(total / mongoQuery.options.limit),
+        articles,
+      });
     } else if (req.query) {
       const articles = await ArticlesModel.find(
         mongoQuery.criteria,
         mongoQuery.options.fields
       )
-
+        .populate({
+          path: "author",
+          select: "name",
+        })
         .limit(mongoQuery.options.limit)
         .skip(mongoQuery.options.skip)
         .sort(mongoQuery.options.sort);
-      const total = await ArticlesModel.countDocuments(mongoQuery.criteria);
+      const total = await ArticlesModel.countDocuments(
+        mongoQuery.criteria
+      ).populate({
+        path: "author",
+        select: "name",
+      });
 
       res.send({
         links: mongoQuery.links("http://localhost:3001/articles", total),
@@ -66,7 +105,10 @@ articlesRouter.get("/", async (req, res, next) => {
         articles,
       });
     } else {
-      const articles = await ArticlesModel.find();
+      const articles = await ArticlesModel.find().populate({
+        path: "author",
+        select: "name",
+      });
       res.send(articles);
     }
   } catch (error) {
@@ -94,48 +136,98 @@ articlesRouter.get("/:articleId", async (req, res, next) => {
   }
 });
 
-articlesRouter.put("/:articleId", async (req, res, next) => {
-  try {
-    const updatedArticle = await ArticlesModel.findByIdAndUpdate(
-      req.params.articleId,
-      req.body,
-      { new: true, runValidators: true }
-    );
+articlesRouter.put(
+  "/:articleId",
+  basicAuthMiddleware,
+  async (req, res, next) => {
+    try {
+      const article = await ArticlesModel.findById(
+        req.params.articleId
+      ).populate("author");
 
-    if (updatedArticle) {
-      res.send(updatedArticle);
-    } else {
-      next(
-        createHttpError(
-          404,
-          `Article with id ${req.params.articleId} not found!`
-        )
-      );
-    }
-  } catch (error) {
-    next(error);
-  }
-});
+      if (!article) {
+        next(
+          createHttpError(
+            404,
+            `Article with id ${req.params.articleId} not found!`
+          )
+        );
+        return;
+      }
+      if (article.author.name !== req.author.name) {
+        next(
+          createHttpError(403, "You are not authorized to delete this article")
+        );
+        return;
+      }
 
-articlesRouter.delete("/:articleId", async (req, res, next) => {
-  try {
-    const deletedArticle = await ArticlesModel.findByIdAndDelete(
-      req.params.articleId
-    );
-    if (deletedArticle) {
-      res.status(204).send();
-    } else {
-      next(
-        createHttpError(
-          404,
-          `Article with id ${req.params.articleId} not found!`
-        )
+      const updatedArticle = await ArticlesModel.findByIdAndUpdate(
+        req.params.articleId,
+        req.body,
+        { new: true, runValidators: true }
       );
+
+      if (updatedArticle) {
+        res.send(updatedArticle);
+      } else {
+        next(
+          createHttpError(
+            404,
+            `Article with id ${req.params.articleId} not found!`
+          )
+        );
+      }
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
   }
-});
+);
+
+articlesRouter.delete(
+  "/:articleId",
+  basicAuthMiddleware,
+  async (req, res, next) => {
+    try {
+      const article = await ArticlesModel.findById(
+        req.params.articleId
+      ).populate("author");
+
+      if (!article) {
+        next(
+          createHttpError(
+            404,
+            `Article with id ${req.params.articleId} not found!`
+          )
+        );
+        return;
+      }
+
+      // Check if the authenticated author is the author of the article
+      if (article.author.name !== req.author.name) {
+        next(
+          createHttpError(403, "You are not authorized to delete this article")
+        );
+        return;
+      }
+
+      const deletedArticle = await ArticlesModel.findByIdAndDelete(
+        req.params.articleId
+      );
+      if (deletedArticle) {
+        res.status(204).send();
+      } else {
+        next(
+          createHttpError(
+            404,
+            `Article with id ${req.params.articleId} not found!`
+          )
+        );
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 // ----------------------------COMMENTS ENDPOINTS---------------------------------------
 articlesRouter.post("/:articleId/comments", async (req, res, next) => {
