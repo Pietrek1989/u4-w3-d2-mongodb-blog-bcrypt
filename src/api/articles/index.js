@@ -1,12 +1,8 @@
 import Express from "express";
-import uniqid from "uniqid";
 import createHttpError from "http-errors";
 import { checkArticlesSchema, triggerBadRequest } from "./validation.js";
-import { getArticles, writeArticles } from "../../lib/fs-tools.js";
-import { sendsPostNoticationEmail } from "../../lib/email-tools.js";
 import ArticlesModel from "./model.js";
 import q2m from "query-to-mongo";
-import atob from "atob";
 import { basicAuthMiddleware } from "../../lib/auth/basic.js";
 
 const articlesRouter = Express.Router();
@@ -152,13 +148,11 @@ articlesRouter.put(
             `Article with id ${req.params.articleId} not found!`
           )
         );
-        return;
       }
       if (article.author.name !== req.author.name) {
         next(
           createHttpError(403, "You are not authorized to delete this article")
         );
-        return;
       }
 
       const updatedArticle = await ArticlesModel.findByIdAndUpdate(
@@ -169,13 +163,6 @@ articlesRouter.put(
 
       if (updatedArticle) {
         res.send(updatedArticle);
-      } else {
-        next(
-          createHttpError(
-            404,
-            `Article with id ${req.params.articleId} not found!`
-          )
-        );
       }
     } catch (error) {
       next(error);
@@ -199,15 +186,12 @@ articlesRouter.delete(
             `Article with id ${req.params.articleId} not found!`
           )
         );
-        return;
       }
 
-      // Check if the authenticated author is the author of the article
       if (article.author.name !== req.author.name) {
         next(
           createHttpError(403, "You are not authorized to delete this article")
         );
-        return;
       }
 
       const deletedArticle = await ArticlesModel.findByIdAndDelete(
@@ -215,13 +199,6 @@ articlesRouter.delete(
       );
       if (deletedArticle) {
         res.status(204).send();
-      } else {
-        next(
-          createHttpError(
-            404,
-            `Article with id ${req.params.articleId} not found!`
-          )
-        );
       }
     } catch (error) {
       next(error);
