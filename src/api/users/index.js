@@ -99,10 +99,8 @@ authorsRouter.get("/me/stories", JWTAuthMiddleware, async (req, res, next) => {
   try {
     const authorID = req.author._id;
 
-    // Get the articles written by the author from the database
     const articlesByAuthor = await ArticlesModel.find({ author: authorID });
 
-    // Return the articles in the response body
     res.send(articlesByAuthor);
   } catch (error) {
     next(error);
@@ -144,7 +142,7 @@ authorsRouter.post("/register", async (req, res, next) => {
 
     const accessToken = await createAccessToken(payload);
 
-    res.send({ accessToken });
+    res.send({ accessToken, newAuthor });
   } catch (error) {
     next(error);
   }
