@@ -6,8 +6,15 @@ const { Schema, model } = mongoose;
 const authorsSchema = new Schema(
   {
     name: { type: String, required: true },
-    avatar: { type: String, required: true },
+    avatar: { type: String, required: false },
+    email: { type: String, required: true },
     password: { type: String, required: true },
+    role: {
+      type: String,
+      required: true,
+      enum: ["Admin", "User"],
+      default: "User",
+    },
   },
   { timestamps: true }
 );
@@ -33,8 +40,8 @@ authorsSchema.methods.toJSON = function () {
   return currentAuthor;
 };
 
-authorsSchema.static("checkCredentials", async function (name, plainPW) {
-  const author = await this.findOne({ name });
+authorsSchema.static("checkCredentials", async function (email, plainPW) {
+  const author = await this.findOne({ email });
 
   if (author) {
     const passwordMatch = await bcrypt.compare(plainPW, author.password);

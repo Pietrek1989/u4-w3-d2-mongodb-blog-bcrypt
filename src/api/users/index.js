@@ -6,6 +6,7 @@ import createError from "http-errors";
 import AuthorsModel from "./model.js";
 import { basicAuthMiddleware } from "../../lib/auth/basic.js";
 import ArticlesModel from "../articles/model.js";
+import { createAccessToken } from "../../lib/auth/tools.js";
 
 const authorsRouter = express.Router();
 
@@ -101,5 +102,45 @@ authorsRouter.get(
     }
   }
 );
+
+authorsRouter.post("/login", async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await AuthorsModel.checkCredentials(email, password);
+
+    if (user) {
+      const payload = { _id: user._id, role: user.role };
+      const accessToken = await createAccessToken(payload);
+
+      res.send({ accessToken });
+    } else {
+      next(createError(401, "Credentials are not ok!"));
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+authorsRouter.post("/register", async (req, res, next) => {
+  try {
+    const { name, email, password } = req.body;
+
+    const existingUser = await AuthorsModel.findOne({ email });
+    if (existingUser) {
+      return next(createError(409, "Email already in use"));
+    }
+
+    const newUser = await AuthorsModel.create({ name, email, password });
+
+    const payload = { _id: newUser._id, role: newUser.role };
+
+    const accessToken = await createAccessToken(payload);
+
+    res.send({ accessToken });
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default authorsRouter;
