@@ -99,7 +99,9 @@ authorsRouter.get("/me/stories", JWTAuthMiddleware, async (req, res, next) => {
   try {
     const authorID = req.author._id;
 
-    const articlesByAuthor = await ArticlesModel.find({ author: authorID });
+    const articlesByAuthor = await ArticlesModel.find({
+      author: authorID,
+    }).populate("author");
 
     res.send(articlesByAuthor);
   } catch (error) {
@@ -138,11 +140,7 @@ authorsRouter.post("/register", async (req, res, next) => {
     const newAuthor = await AuthorsModel.create(req.body);
     await newAuthor.save();
 
-    const payload = { _id: newAuthor._id, role: newAuthor.role };
-
-    const accessToken = await createAccessToken(payload);
-
-    res.send({ accessToken, newAuthor });
+    res.send({ newAuthor });
   } catch (error) {
     next(error);
   }
