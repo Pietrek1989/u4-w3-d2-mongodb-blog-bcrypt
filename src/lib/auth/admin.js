@@ -2,7 +2,7 @@ import createHttpError from "http-errors";
 
 export const adminOnlyMiddleware = (req, res, next) => {
   // Once user is authenticated we shall check his role (Authorization)
-  if (req.user.role === "Admin") {
+  if (req.author.role === "Admin") {
     // If he/she is an admin --> next
     next();
   } else {
