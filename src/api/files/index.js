@@ -2,10 +2,7 @@ import Express from "express";
 import multer from "multer";
 import {
   getArticles,
-  getAuthors,
   getAuthorsJSONReadableStream,
-  writeArticles,
-  writeAuthors,
 } from "../../lib/fs-tools.js";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
@@ -14,6 +11,7 @@ import { pipeline } from "stream";
 import { sendsRegistrationEmail } from "../../lib/email-tools.js";
 import { Transform } from "json2csv";
 import ArticlesModel from "../articles/model.js";
+import AuthorsModel from "../users/model.js";
 
 const filesRouter = Express.Router();
 const cloudinaryUploader = multer({
@@ -39,23 +37,11 @@ filesRouter.post(
   async (req, res, next) => {
     try {
       console.log("FILE:", req.file);
-      // const originalFileExtension = extname(req.file.originalname);
-      // const fileName = req.params.authorId + originalFileExtension;
-      // await saveAuthorsAvatars(fileName, req.file.buffer);
-
-      const authorsArray = await getAuthors();
-      const index = authorsArray.findIndex(
-        (author) => author.id === req.params.authorId
-      );
-      if (index !== -1) {
-        const oldAuthor = authorsArray[index];
-        const updatedAuthor = {
-          ...oldAuthor,
-          avatar: `${req.file.path}`,
-        };
-        authorsArray[index] = updatedAuthor;
-        await writeAuthors(authorsArray);
-        res.send({ updatedAuthor, message: "file uploaded" });
+      const author = await AuthorsModel.findById(req.params.authorId);
+      author.avatar = req.file.path;
+      await author.save();
+      if (author) {
+        res.send({ author, message: "file uploaded" });
       } else {
         next(
           createHttpError(
