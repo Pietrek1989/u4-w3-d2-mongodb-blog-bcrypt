@@ -12,7 +12,7 @@ const authorsSchema = new Schema(
     role: {
       type: String,
       required: true,
-      enum: ["Admin", "User"],
+      enum: ["admin", "User"],
       default: "User",
     },
   },

@@ -96,7 +96,10 @@ articlesRouter.put("/:articleId", JWTAuthMiddleware, async (req, res, next) => {
       );
     }
     console.log("article", article.author._id, "req", req.author._id);
-    if (article.author._id.toString() !== req.author._id.toString()) {
+    if (
+      article.author._id.toString() !== req.author._id.toString() &&
+      req.author.role !== "admin"
+    ) {
       next(createHttpError(403, "You are not authorized to edit this article"));
     }
 
