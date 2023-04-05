@@ -130,19 +130,14 @@ authorsRouter.post("/login", async (req, res, next) => {
 
 authorsRouter.post("/register", async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { email } = req.body;
 
     const existingAuthor = await AuthorsModel.findOne({ email });
     if (existingAuthor) {
-      return next(createError(409, "Email already in use"));
+      return next(createError(400, "Email already in use"));
     }
 
-    const newAuthor = await AuthorsModel.create({
-      name,
-      email,
-      password,
-      role,
-    });
+    const newAuthor = await AuthorsModel.create(req.body);
     await newAuthor.save();
 
     const payload = { _id: newAuthor._id, role: newAuthor.role };
