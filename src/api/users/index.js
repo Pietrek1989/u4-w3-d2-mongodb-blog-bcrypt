@@ -8,6 +8,7 @@ import { basicAuthMiddleware } from "../../lib/auth/basic.js";
 import ArticlesModel from "../articles/model.js";
 import { createAccessToken } from "../../lib/auth/tools.js";
 import { JWTAuthMiddleware } from "../../lib/auth/jwt.js";
+import passport from "passport";
 
 const authorsRouter = express.Router();
 
@@ -29,61 +30,6 @@ authorsRouter.get("/", async (req, res, next) => {
     next(error);
   }
 });
-
-authorsRouter.get("/:authorId", JWTAuthMiddleware, async (req, res, next) => {
-  try {
-    const author = await AuthorsModel.findById(req.params.authorId);
-    if (author) {
-      res.send(author);
-    } else {
-      next(
-        createError(404, `Author with id ${req.params.authorId} not found!`)
-      );
-    }
-  } catch (error) {
-    next(error);
-  }
-});
-
-authorsRouter.put("/:authorId", JWTAuthMiddleware, async (req, res, next) => {
-  try {
-    const updatedAuthor = await AuthorsModel.findByIdAndUpdate(
-      req.params.authorId,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    if (updatedAuthor) {
-      res.send(updatedAuthor);
-    } else {
-      next(
-        createError(404, `Author with id ${req.params.authorId} not found!`)
-      );
-    }
-  } catch (error) {
-    next(error);
-  }
-});
-
-authorsRouter.delete(
-  "/:authorId",
-  JWTAuthMiddleware,
-  async (req, res, next) => {
-    try {
-      const deletedAuthor = await AuthorsModel.findByIdAndDelete(
-        req.params.authorId
-      );
-      if (deletedAuthor) {
-        res.status(204).send();
-      } else {
-        next(
-          createError(404, `Author with id ${req.params.authorId} not found!`)
-        );
-      }
-    } catch (error) {
-      next(error);
-    }
-  }
-);
 
 authorsRouter.get("/me/info", JWTAuthMiddleware, async (req, res, next) => {
   try {
@@ -145,5 +91,93 @@ authorsRouter.post("/register", async (req, res, next) => {
     next(error);
   }
 });
+
+authorsRouter.get(
+  "/googleLogin",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+// authorsRouter.get(
+//   "/googleRedirect",
+//   passport.authenticate("google"),
+//   { session: false },
+//   async (req, res, next) => {
+//     try {
+//       // res.cookie("accessToken", req.user.accessToken, {httpOnly: true}, secure: true, sameSite: "strict")
+//       // res.redirect(process.env.FE_URL)
+//       res.redirect(`${process.env.FE_URL}?accessToken=${req.user.accessToken}`);
+//       // ,({ accessToken: req.user.accessToken });
+//     } catch {
+//       next(error);
+//     }
+//   }
+// );
+
+authorsRouter.get(
+  "/googleRedirect",
+  passport.authenticate("google", { session: false }),
+  (req, res, next) => {
+    try {
+      res.redirect(`${process.env.FE_URL}?accessToken=${req.user.accessToken}`);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+authorsRouter.get("/:authorId", JWTAuthMiddleware, async (req, res, next) => {
+  try {
+    const author = await AuthorsModel.findById(req.params.authorId);
+    if (author) {
+      res.send(author);
+    } else {
+      next(
+        createError(404, `Author with id ${req.params.authorId} not found!`)
+      );
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+authorsRouter.put("/:authorId", JWTAuthMiddleware, async (req, res, next) => {
+  try {
+    const updatedAuthor = await AuthorsModel.findByIdAndUpdate(
+      req.params.authorId,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (updatedAuthor) {
+      res.send(updatedAuthor);
+    } else {
+      next(
+        createError(404, `Author with id ${req.params.authorId} not found!`)
+      );
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+authorsRouter.delete(
+  "/:authorId",
+  JWTAuthMiddleware,
+  async (req, res, next) => {
+    try {
+      const deletedAuthor = await AuthorsModel.findByIdAndDelete(
+        req.params.authorId
+      );
+      if (deletedAuthor) {
+        res.status(204).send();
+      } else {
+        next(
+          createError(404, `Author with id ${req.params.authorId} not found!`)
+        );
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default authorsRouter;

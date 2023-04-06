@@ -14,9 +14,14 @@ import cors from "cors";
 import { join } from "path";
 import createHttpError from "http-errors";
 import mongoose from "mongoose";
+import googleStrategy from "./lib/auth/googleOauth.js";
+import passport from "passport";
 
 const server = Express();
 const port = process.env.PORT;
+
+passport.use("google", googleStrategy);
+
 const publicFolderPath = join(process.cwd(), "./public");
 const whitelist = [process.env.FE_DEV_URL, process.env.FE_PROD_URL];
 server.use(
@@ -35,8 +40,10 @@ server.use(
     },
   })
 );
-server.use(Express.static(publicFolderPath));
+
+// server.use(Express.static(publicFolderPath));
 server.use(Express.json());
+server.use(passport.initialize());
 server.use("/authors", authorsRouter);
 server.use("/articles", articlesRouter);
 server.use("/files", filesRouter);
