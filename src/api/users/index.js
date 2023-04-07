@@ -97,21 +97,8 @@ authorsRouter.get(
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// authorsRouter.get(
-//   "/googleRedirect",
-//   passport.authenticate("google"),
-//   { session: false },
-//   async (req, res, next) => {
-//     try {
-//       // res.cookie("accessToken", req.user.accessToken, {httpOnly: true}, secure: true, sameSite: "strict")
-//       // res.redirect(process.env.FE_URL)
-//       res.redirect(`${process.env.FE_URL}?accessToken=${req.user.accessToken}`);
-//       // ,({ accessToken: req.user.accessToken });
-//     } catch {
-//       next(error);
-//     }
-//   }
-// );
+//      res.cookie("accessToken", req.user.accessToken, {httpOnly: true}, secure: true, sameSite: "strict")
+//      res.redirect(process.env.FE_URL)
 
 authorsRouter.get(
   "/googleRedirect",
